@@ -1,119 +1,151 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<title>表情切換人臉</title>
+<meta charset="UTF-8" />
+<title>Canvas 表情人臉</title>
 <style>
   body {
-    font-family: sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     text-align: center;
-    background: #f0f0f0;
+    background: #f5f5f5;
+  }
+  #wrap {
+    margin-top: 30px;
+  }
+  canvas {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
   }
   .btns {
-    margin: 20px 0;
+    margin-top: 16px;
   }
   button {
-    margin: 0 5px;
+    margin: 0 6px;
     padding: 8px 14px;
     cursor: pointer;
   }
-  .face {
-    position: relative;
-    margin: 0 auto;
-    width: 200px;
-    height: 200px;
-    background: #ffe0a3;
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(0,0,0,.2);
-  }
-  .eye {
-    position: absolute;
-    top: 65px;
-    width: 25px;
-    height: 25px;
-    background: #fff;
-    border-radius: 50%;
-    box-shadow: 0 0 0 3px #333;
-  }
-  .eye::after {
-    content: "";
-    position: absolute;
-    left: 7px;
-    top: 7px;
-    width: 11px;
-    height: 11px;
-    background: #333;
-    border-radius: 50%;
-  }
-  .eye.left  { left: 55px; }
-  .eye.right { right: 55px; }
-
-  .mouth {
-    position: absolute;
-    left: 50%;
-    top: 125px;
-    width: 100px;
-    height: 60px;
-    margin-left: -50px;
-    border: 5px solid #333;
-    border-color: #333 transparent transparent transparent; /* 預設：笑 */
-    border-radius: 0 0 80px 80px;
-    box-sizing: border-box;
-    transform-origin: center top;
-  }
-
-  /* 各種表情 */
-  .happy  { border-color: #333 transparent transparent transparent; border-radius: 0 0 80px 80px; transform: scaleY(1); }
-  .sad    { border-color: transparent transparent #333 transparent; border-radius: 80px 80px 0 0; transform: translateY(10px); }
-  .angry  { border-color: transparent transparent #333 transparent; border-radius: 0; transform: rotate(-10deg); }
-  .neutral{ border-color: #333 transparent transparent transparent; border-radius: 0; transform: rotate(0deg) scaleY(0.2); }
-
-  /* 眉毛加強怒、哀 */
-  .brow {
-    position: absolute;
-    width: 50px;
-    height: 6px;
-    background: #333;
-    top: 45px;
-    border-radius: 3px;
-    transition: transform .2s;
-  }
-  .brow.left  { left: 45px;  }
-  .brow.right { right: 45px; }
-
-  .face.angry .brow.left  { transform: rotate(-20deg) translateY(3px); }
-  .face.angry .brow.right { transform: rotate(20deg)  translateY(3px); }
-  .face.sad   .brow.left  { transform: rotate(15deg); }
-  .face.sad   .brow.right { transform: rotate(-15deg); }
 </style>
 </head>
 <body>
+<h2>HTML5 Canvas 人臉表情示範</h2>
 
-<h2>人臉表情示範（類 Flash 效果）</h2>
-
-<div class="btns">
-  <button onclick="setMood('happy')">喜</button>
-  <button onclick="setMood('angry')">怒</button>
-  <button onclick="setMood('sad')">哀</button>
-  <button onclick="setMood('neutral')">樂 / 平靜</button>
-</div>
-
-<div id="face" class="face happy">
-  <div class="brow left"></div>
-  <div class="brow right"></div>
-  <div class="eye left"></div>
-  <div class="eye right"></div>
-  <div id="mouth" class="mouth happy"></div>
+<div id="wrap">
+  <canvas id="faceCanvas" width="300" height="300"></canvas>
+  <div class="btns">
+    <button onclick="setMood('happy')">喜</button>
+    <button onclick="setMood('angry')">怒</button>
+    <button onclick="setMood('sad')">哀</button>
+    <button onclick="setMood('neutral')">樂 / 平靜</button>
+  </div>
 </div>
 
 <script>
-  function setMood(mood) {
-    const face  = document.getElementById('face');
-    const mouth = document.getElementById('mouth');
-    face.className = 'face ' + mood;
-    mouth.className = 'mouth ' + mood;
-  }
-</script>
+  const canvas = document.getElementById('faceCanvas');
+  const ctx = canvas.getContext('2d');
 
+  function drawFace(mood) {
+    const cx = 150, cy = 150, r = 100;
+
+    // 清空畫布
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 頭
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffe0a3';
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 眼睛
+    drawEye(cx - 40, cy - 25);
+    drawEye(cx + 40, cy - 25);
+
+    // 眉毛
+    drawBrows(mood, cx, cy);
+
+    // 嘴巴
+    drawMouth(mood, cx, cy + 35);
+  }
+
+  function drawEye(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#333';
+    ctx.fill();
+  }
+
+  function drawBrows(mood, cx, cy) {
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 4;
+    const y = cy - 55;
+    let leftStart = [cx - 70, y];
+    let leftEnd   = [cx - 20, y];
+    let rightStart = [cx + 20, y];
+    let rightEnd   = [cx + 70, y];
+
+    if (mood === 'angry') {
+      leftStart[1]  = y + 5;
+      leftEnd[1]    = y - 5;
+      rightStart[1] = y - 5;
+      rightEnd[1]   = y + 5;
+    } else if (mood === 'sad') {
+      leftStart[1]  = y - 5;
+      leftEnd[1]    = y + 5;
+      rightStart[1] = y + 5;
+      rightEnd[1]   = y - 5;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(...leftStart);
+    ctx.lineTo(...leftEnd);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(...rightStart);
+    ctx.lineTo(...rightEnd);
+    ctx.stroke();
+  }
+
+  function drawMouth(mood, cx, cy) {
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+
+    if (mood === 'happy') {
+      // 微笑弧線
+      ctx.arc(cx, cy, 45, 0.15 * Math.PI, 0.85 * Math.PI, false);
+    } else if (mood === 'sad') {
+      // 反向弧線
+      ctx.arc(cx, cy + 30, 45, 1.15 * Math.PI, 1.85 * Math.PI, true);
+    } else if (mood === 'angry') {
+      // 斜線嘴
+      ctx.moveTo(cx - 30, cy + 20);
+      ctx.lineTo(cx + 30, cy + 5);
+    } else {
+      // 中性直線
+      ctx.moveTo(cx - 30, cy + 15);
+      ctx.lineTo(cx + 30, cy + 15);
+    }
+    ctx.stroke();
+  }
+
+  function setMood(mood) {
+    drawFace(mood);
+  }
+
+  // 預設畫出「喜」
+  drawFace('happy');
+</script>
 </body>
 </html>
