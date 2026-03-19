@@ -149,3 +149,150 @@
 </script>
 </body>
 </html>
+<script>
+  const canvas = document.getElementById('faceCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // 目前表情狀態
+  const state = {
+    mouthCurve: 0.7,    // 1 = 很開心向上弧線, -1 = 很悲傷向下弧線, 0 = 平
+    mouthOffsetY: 0,    // 嘴巴整體上下移動
+    browTilt: 0         // 眉毛傾斜程度: 正 = 生氣, 負 = 哀傷
+  };
+
+  // 動畫控制
+  let animStart = null;
+  let animDuration = 400; // 毫秒
+  let startState = null;
+  let targetState = null;
+
+  function drawFace() {
+    const cx = 150, cy = 150, r = 100;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 頭
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffe0a3';
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 眼睛
+    drawEye(cx - 40, cy - 25);
+    drawEye(cx + 40, cy - 25);
+
+    // 眉毛與嘴巴
+    drawBrows(cx, cy, state.browTilt);
+    drawMouth(cx, cy + 35 + state.mouthOffsetY, state.mouthCurve);
+  }
+
+  function drawEye(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#333';
+    ctx.fill();
+  }
+
+  function drawBrows(cx, cy, tilt) {
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 4;
+    const baseY = cy - 55;
+
+    // 左眉
+    ctx.beginPath();
+    ctx.moveTo(cx - 70, baseY + tilt * 6);   // tilt > 0 左邊下降（怒）
+    ctx.lineTo(cx - 20, baseY - tilt * 6);
+    ctx.stroke();
+
+    // 右眉
+    ctx.beginPath();
+    ctx.moveTo(cx + 20, baseY - tilt * 6);
+    ctx.lineTo(cx + 70, baseY + tilt * 6);
+    ctx.stroke();
+  }
+
+  function drawMouth(cx, cy, curve) {
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+
+    if (Math.abs(curve) < 0.1) {
+      // 接近 0 視為直線
+      ctx.moveTo(cx - 30, cy);
+      ctx.lineTo(cx + 30, cy);
+    } else if (curve > 0) {
+      // 向上弧線（喜）：半徑隨曲率調整
+      const radius = 45;
+      const start = 0.15 * Math.PI;
+      const end   = 0.85 * Math.PI;
+      ctx.arc(cx, cy + (1 - curve) * 10, radius, start, end, false);
+    } else {
+      // 向下弧線（哀）：curve 為負，取其絕對值
+      const radius = 45;
+      const c = -curve;
+      const start = 1.15 * Math.PI;
+      const end   = 1.85 * Math.PI;
+      ctx.arc(cx, cy + 20 + (1 - c) * 10, radius, start, end, true);
+    }
+    ctx.stroke();
+  }
+
+  // 啟動補間動畫
+  function animateTo(newTarget) {
+    animStart = null;
+    startState = { ...state };
+    targetState = newTarget;
+    requestAnimationFrame(step);
+  }
+
+  function step(timestamp) {
+    if (!animStart) animStart = timestamp;
+    const elapsed = timestamp - animStart;
+    const t = Math.min(elapsed / animDuration, 1); // 0~1
+
+    // 簡單的 ease-in-out（可以換成其他 easing）
+    const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+    // 插值
+    state.mouthCurve   = lerp(startState.mouthCurve,   targetState.mouthCurve,   eased);
+    state.mouthOffsetY = lerp(startState.mouthOffsetY, targetState.mouthOffsetY, eased);
+    state.browTilt     = lerp(startState.browTilt,     targetState.browTilt,     eased);
+
+    drawFace();
+
+    if (t < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  // 按鈕事件：定義各情緒的目標參數
+  function setMood(mood) {
+    if (mood === 'happy') {
+      animateTo({ mouthCurve: 1, mouthOffsetY: 0,  browTilt: 0.2 });
+    } else if (mood === 'sad') {
+      animateTo({ mouthCurve: -1, mouthOffsetY: 10, browTilt: -0.5 });
+    } else if (mood === 'angry') {
+      animateTo({ mouthCurve: 0, mouthOffsetY: 5,  browTilt: 0.9 });
+    } else {
+      // neutral
+      animateTo({ mouthCurve: 0, mouthOffsetY: 0,  browTilt: 0 });
+    }
+  }
+
+  // 初始畫面
+  drawFace();
+</script>
