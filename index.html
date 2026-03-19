@@ -2,89 +2,18 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>Canvas 人臉表情動畫示範</title>
+  <title>Canvas 表情測試</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f5f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-    header {
-      margin-top: 24px;
-      text-align: center;
-    }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 20px;
-    }
-    p.desc {
-      margin: 0;
-      font-size: 13px;
-      color: #555;
-    }
-    main {
-      margin-top: 24px;
-      padding: 16px 20px 24px;
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    canvas {
-      background: #ffffff;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      display: block;
-    }
-    .controls {
-      margin-top: 16px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    button {
-      min-width: 64px;
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: 1px solid #ccc;
-      background: #f9f9f9;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-    }
-    button:hover {
-      background: #ececec;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.12);
-    }
-    button:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-    }
-    footer {
-      margin-top: 16px;
-      font-size: 11px;
-      color: #777;
-      text-align: center;
-    }
+    body { margin: 0; background:#f5f5f5; font-family:sans-serif; text-align:center; }
+    main { margin-top:30px; }
+    canvas { background:#fff; border:1px solid #ccc; border-radius:8px; }
+    .controls { margin-top:12px; }
+    button { margin:0 4px; padding:6px 10px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>HTML5 Canvas 人臉表情動畫</h1>
-    <p class="desc">按按鈕切換喜、怒、哀、樂，觀察表情過渡動畫效果</p>
-  </header>
-
   <main>
+    <h2>Canvas 表情測試</h2>
     <canvas id="faceCanvas" width="300" height="300"></canvas>
     <div class="controls">
       <button data-mood="happy">喜</button>
@@ -92,91 +21,130 @@
       <button data-mood="sad">哀</button>
       <button data-mood="neutral">樂 / 平靜</button>
     </div>
-    <footer>
-      適合作為入門 Canvas＋動畫＋互動事件的教學範例
-    </footer>
   </main>
 
   <script>
-    // 取得 Canvas 與繪圖環境
     const canvas = document.getElementById('faceCanvas');
     const ctx = canvas.getContext('2d');
 
-    // 目前表情狀態（連續數值，方便做補間）
-    const state = {
-      mouthCurve: 0.8,   // 1 = 大笑（向上弧線）, -1 = 哀傷（向下弧線）, 0 = 平口
-      mouthOffsetY: 0,   // 嘴巴上下移動
-      browTilt: 0.2      // 眉毛傾斜：正 = 生氣感，負 = 哀傷感
-    };
+    if (!ctx) {
+      alert('無法取得 Canvas 繪圖環境，請確認瀏覽器支援 Canvas');
+    }
 
-    // 動畫相關變數
+    const state = { mouthCurve: 0.8, mouthOffsetY: 0, browTilt: 0.2 };
     let animStart = null;
-    const animDuration = 400; // 毫秒
+    const animDuration = 400;
     let startState = null;
     let targetState = null;
     let isAnimating = false;
 
-    // 線性插值
-    function lerp(a, b, t) {
-      return a + (b - a) * t;
-    }
+    function lerp(a,b,t){ return a+(b-a)*t; }
+    function easeInOut(t){ return t<0.5?2*t*t:-1+(4-2*t)*t; }
 
-    // 簡單 easeInOut（讓過渡較自然）
-    function easeInOut(t) {
-      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    }
-
-    // 繪製整張臉
-    function drawFace() {
-      const cx = 150;
-      const cy = 150;
-      const r  = 100;
-
-      // 清空畫布
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function drawFace(){
+      const cx=150, cy=150, r=100;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
 
       // 頭
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffe0a3';
+      ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.fillStyle='#ffe0a3';
       ctx.fill();
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 3;
+      ctx.strokeStyle='#333';
+      ctx.lineWidth=3;
       ctx.stroke();
 
       // 眼睛
-      drawEye(cx - 40, cy - 25);
-      drawEye(cx + 40, cy - 25);
+      drawEye(cx-40, cy-25);
+      drawEye(cx+40, cy-25);
 
       // 眉毛與嘴巴
-      drawBrows(cx, cy, state.browTilt);
-      drawMouth(cx, cy + 35 + state.mouthOffsetY, state.mouthCurve);
+      drawBrows(cx,cy,state.browTilt);
+      drawMouth(cx,cy+35+state.mouthOffsetY,state.mouthCurve);
     }
 
-    // 眼睛
-    function drawEye(x, y) {
-      // 眼白
+    function drawEye(x,y){
       ctx.beginPath();
-      ctx.arc(x, y, 12, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
+      ctx.arc(x,y,12,0,Math.PI*2);
+      ctx.fillStyle='#fff';
       ctx.fill();
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle='#333';
+      ctx.lineWidth=2;
       ctx.stroke();
 
-      // 瞳孔
       ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#333';
+      ctx.arc(x,y,5,0,Math.PI*2);
+      ctx.fillStyle='#333';
       ctx.fill();
     }
 
-    // 眉毛：根據 browTilt 做傾斜
-    function drawBrows(cx, cy, tilt) {
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 4;
-      const baseY = cy - 55;
+    function drawBrows(cx,cy,tilt){
+      ctx.strokeStyle='#333';
+      ctx.lineWidth=4;
+      const baseY=cy-55;
 
-      // 左眉
       ctx.beginPath();
-      ctx.moveTo(cx - 70, bas
+      ctx.moveTo(cx-70, baseY+tilt*6);
+      ctx.lineTo(cx-20, baseY-tilt*6);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(cx+20, baseY-tilt*6);
+      ctx.lineTo(cx+70, baseY+tilt*6);
+      ctx.stroke();
+    }
+
+    function drawMouth(cx,cy,curve){
+      ctx.strokeStyle='#333';
+      ctx.lineWidth=5;
+      ctx.beginPath();
+
+      if (Math.abs(curve)<0.1){
+        ctx.moveTo(cx-30,cy);
+        ctx.lineTo(cx+30,cy);
+      }else if(curve>0){
+        const radius=45;
+        ctx.arc(cx, cy+(1-curve)*12, radius, 0.15*Math.PI, 0.85*Math.PI, false);
+      }else{
+        const radius=45, c=-curve;
+        ctx.arc(cx, cy+18+(1-c)*12, radius, 1.15*Math.PI, 1.85*Math.PI, true);
+      }
+      ctx.stroke();
+    }
+
+    function animateTo(target){
+      startState={...state};
+      targetState=target;
+      animStart=null;
+      if(!isAnimating){
+        isAnimating=true;
+        requestAnimationFrame(step);
+      }
+    }
+
+    function step(ts){
+      if(!animStart) animStart=ts;
+      const elapsed=ts-animStart;
+      const t=Math.min(elapsed/animDuration,1);
+      const e=easeInOut(t);
+
+      state.mouthCurve  = lerp(startState.mouthCurve,  targetState.mouthCurve,  e);
+      state.mouthOffsetY= lerp(startState.mouthOffsetY,targetState.mouthOffsetY,e);
+      state.browTilt    = lerp(startState.browTilt,    targetState.browTilt,    e);
+
+      drawFace();
+
+      if(t<1){
+        requestAnimationFrame(step);
+      }else{
+        isAnimating=false;
+      }
+    }
+
+    function setMood(mood){
+      if(mood==='happy'){
+        animateTo({mouthCurve:1, mouthOffsetY:0,  browTilt:0.2});
+      }else if(mood==='sad'){
+        animateTo({mouthCurve:-1, mouthOffsetY:10, browTilt:-0.5});
+      }else if(mood==='angry'){
+        animateTo({mouthCurve:0, mouthOffsetY:6,
