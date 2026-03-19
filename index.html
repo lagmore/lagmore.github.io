@@ -2,149 +2,23 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>Canvas 表情測試</title>
-  <style>
-    body { margin: 0; background:#f5f5f5; font-family:sans-serif; text-align:center; }
-    main { margin-top:30px; }
-    canvas { background:#fff; border:1px solid #ccc; border-radius:8px; }
-    .controls { margin-top:12px; }
-    button { margin:0 4px; padding:6px 10px; }
-  </style>
+  <title>Canvas 測試</title>
 </head>
 <body>
-  <main>
-    <h2>Canvas 表情測試</h2>
-    <canvas id="faceCanvas" width="300" height="300"></canvas>
-    <div class="controls">
-      <button data-mood="happy">喜</button>
-      <button data-mood="angry">怒</button>
-      <button data-mood="sad">哀</button>
-      <button data-mood="neutral">樂 / 平靜</button>
-    </div>
-  </main>
+  <h3>Canvas 測試：應該看到一個藍色圓形</h3>
+  <canvas id="c" width="200" height="200" style="border:1px solid #000;"></canvas>
 
   <script>
-    const canvas = document.getElementById('faceCanvas');
-    const ctx = canvas.getContext('2d');
-
+    const c = document.getElementById('c');
+    const ctx = c.getContext('2d');
     if (!ctx) {
-      alert('無法取得 Canvas 繪圖環境，請確認瀏覽器支援 Canvas');
-    }
-
-    const state = { mouthCurve: 0.8, mouthOffsetY: 0, browTilt: 0.2 };
-    let animStart = null;
-    const animDuration = 400;
-    let startState = null;
-    let targetState = null;
-    let isAnimating = false;
-
-    function lerp(a,b,t){ return a+(b-a)*t; }
-    function easeInOut(t){ return t<0.5?2*t*t:-1+(4-2*t)*t; }
-
-    function drawFace(){
-      const cx=150, cy=150, r=100;
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      // 頭
+      alert('getContext 失敗');
+    } else {
+      ctx.fillStyle = 'blue';
       ctx.beginPath();
-      ctx.arc(cx,cy,r,0,Math.PI*2);
-      ctx.fillStyle='#ffe0a3';
-      ctx.fill();
-      ctx.strokeStyle='#333';
-      ctx.lineWidth=3;
-      ctx.stroke();
-
-      // 眼睛
-      drawEye(cx-40, cy-25);
-      drawEye(cx+40, cy-25);
-
-      // 眉毛與嘴巴
-      drawBrows(cx,cy,state.browTilt);
-      drawMouth(cx,cy+35+state.mouthOffsetY,state.mouthCurve);
-    }
-
-    function drawEye(x,y){
-      ctx.beginPath();
-      ctx.arc(x,y,12,0,Math.PI*2);
-      ctx.fillStyle='#fff';
-      ctx.fill();
-      ctx.strokeStyle='#333';
-      ctx.lineWidth=2;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(x,y,5,0,Math.PI*2);
-      ctx.fillStyle='#333';
+      ctx.arc(100, 100, 50, 0, Math.PI * 2);
       ctx.fill();
     }
-
-    function drawBrows(cx,cy,tilt){
-      ctx.strokeStyle='#333';
-      ctx.lineWidth=4;
-      const baseY=cy-55;
-
-      ctx.beginPath();
-      ctx.moveTo(cx-70, baseY+tilt*6);
-      ctx.lineTo(cx-20, baseY-tilt*6);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(cx+20, baseY-tilt*6);
-      ctx.lineTo(cx+70, baseY+tilt*6);
-      ctx.stroke();
-    }
-
-    function drawMouth(cx,cy,curve){
-      ctx.strokeStyle='#333';
-      ctx.lineWidth=5;
-      ctx.beginPath();
-
-      if (Math.abs(curve)<0.1){
-        ctx.moveTo(cx-30,cy);
-        ctx.lineTo(cx+30,cy);
-      }else if(curve>0){
-        const radius=45;
-        ctx.arc(cx, cy+(1-curve)*12, radius, 0.15*Math.PI, 0.85*Math.PI, false);
-      }else{
-        const radius=45, c=-curve;
-        ctx.arc(cx, cy+18+(1-c)*12, radius, 1.15*Math.PI, 1.85*Math.PI, true);
-      }
-      ctx.stroke();
-    }
-
-    function animateTo(target){
-      startState={...state};
-      targetState=target;
-      animStart=null;
-      if(!isAnimating){
-        isAnimating=true;
-        requestAnimationFrame(step);
-      }
-    }
-
-    function step(ts){
-      if(!animStart) animStart=ts;
-      const elapsed=ts-animStart;
-      const t=Math.min(elapsed/animDuration,1);
-      const e=easeInOut(t);
-
-      state.mouthCurve  = lerp(startState.mouthCurve,  targetState.mouthCurve,  e);
-      state.mouthOffsetY= lerp(startState.mouthOffsetY,targetState.mouthOffsetY,e);
-      state.browTilt    = lerp(startState.browTilt,    targetState.browTilt,    e);
-
-      drawFace();
-
-      if(t<1){
-        requestAnimationFrame(step);
-      }else{
-        isAnimating=false;
-      }
-    }
-
-    function setMood(mood){
-      if(mood==='happy'){
-        animateTo({mouthCurve:1, mouthOffsetY:0,  browTilt:0.2});
-      }else if(mood==='sad'){
-        animateTo({mouthCurve:-1, mouthOffsetY:10, browTilt:-0.5});
-      }else if(mood==='angry'){
-        animateTo({mouthCurve:0, mouthOffsetY:6,
+  </script>
+</body>
+</html>
